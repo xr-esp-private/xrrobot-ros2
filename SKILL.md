@@ -1,7 +1,11 @@
 ---
 name: xrrobot-ros2
-description: "控制、检查和排查基于 ROS 2 Jazzy 的 XRRobot，包括底盘运动、建图、Nav2 导航、相机、雷达、视觉、抓取、语音和任务编排。"
-metadata: {"openclaw":{"os":["linux"]}}
+description: 控制、检查和排查基于 ROS 2 Jazzy 的 XRRobot...
+version: 1.0.0
+metadata:
+  openclaw:
+    os:
+      - linux
 ---
 
 # XRRobot ROS 2
