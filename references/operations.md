@@ -16,6 +16,20 @@ ROS 2 版本：Jazzy
 
 ---
 
+## 安全前置
+
+凡是会引起机器人底盘移动、机械臂运动、夹爪动作、自动导航、自动驾驶、跟随、抓取的操作，都必须先满足以下条件：
+
+- 机器人周围已清场，人员、线缆、易碎物不在运动范围内
+- 操作人员在现场可见机器人状态，并能随时介入停止
+- 在执行会真实运动的命令前，先向用户明确说明“机器人可能立即开始运动”
+- 对抓取、导航、自动驾驶、跟随这类连续动作，除非用户已经明确要求立即执行，否则先确认一次再执行
+- Web 服务仅建议在可信局域网内使用；采集画面、训练数据、部署模型前先确认不会泄露敏感内容
+
+如果用户只是想查看状态、列模型、看检测结果、dry-run 检测，不要默认升级成真实运动或抓取动作。
+
+---
+
 ## 模式切换（推荐用 xrmode）
 
 xrmode 是 `xrrobot-runtime-tools` 提供的模式切换 CLI。
@@ -192,7 +206,9 @@ ros2launch xrrobot_vision vision_dashboard.launch.py
 **"停下来 / 急停"**
 ```
 → xrmode stop
-→ 或直接 ros2 topic pub /cmd_vel ...
+→ 立即向用户说明：如果机器人仍在运动，现场人员需要立刻采取人工安全措施
+→ 不要把“手写 ros2 topic pub /cmd_vel ...”当成默认急停方案
+→ 停止后用 xrmode status 确认当前模式已退出或不再处于 ready
 ```
 
 ### 查询状态
@@ -217,6 +233,7 @@ ros2launch xrrobot_vision vision_dashboard.launch.py
 
 **"开始自动驾驶跑圈"**
 ```
+→ 先提醒用户：机器人启动后可能立即开始自主运动，先确认场地清空、赛道正确、有人现场看护
 → ros2launch xrrobot_autopilot xrrobot_autopilot_drive.launch.py
 ```
 
@@ -228,20 +245,35 @@ ros2launch xrrobot_vision vision_dashboard.launch.py
 
 **"启动跟随"**
 ```
+→ 先提醒用户：机器人启动后可能立即跟随前方目标移动，请先清空前方区域并保持人工看护
 → ros2launch xrrobot_follower laser_follower.launch.py
-→ 用户站到雷达前方即可
+→ 确认后再让用户站到雷达前方
 ```
 
 **"启动警戒"**
 ```
+→ 先提醒用户：该模式会持续监测并可能触发告警，确保部署区域和阈值符合预期
 → ros2launch xrrobot_follower radar_guard.launch.py
 → 1m 内触发报警
 ```
 
 **"训练YOLO模型"**
 ```
+→ 先提醒用户：Web 服务建议只在可信局域网访问，采集画面和训练数据可能包含敏感信息
 → ros2launch xrrobot_yolo_studio xrrobot_yolo_studio.launch.py
 → 告知用户访问 http://<IP>:8091
+```
+
+**"启动YOLO识别 / 用某个YOLO模型开始识别 / 发布识别结果"**
+```
+→ 先提醒用户：识别服务建议只在可信局域网中使用；若后续接入控车链路，先单独验证模型效果
+→ 先自动检索 xrrobot_yolo_studio 下的 data/models、data/runs、config 中的 .pt/.onnx
+→ 只有一个候选时，直接用它作为 model_path
+→ 多个候选时，列出模型给用户选择
+→ 没有候选时，再追问模型路径
+→ ros2launch xrrobot_yolo_studio xrrobot_yolo_detection.launch.py model_path:=<模型路径>
+→ 如相机已在其他模块启动，则加 launch_camera:=false image_topic:=/camera/color/image_raw
+→ 说明结果发布到 /xrrobot_yolo_studio/detection_results
 ```
 
 **"启动视觉抓取"**

@@ -18,6 +18,19 @@ Web 界面：`http://<机器人IP>:8795`
 
 ---
 
+## 安全前置
+
+视觉抓取会引起机械臂、夹爪，必要时还会引起底盘运动。执行前必须先满足：
+
+- 机械臂和夹爪运动范围内无人、无易碎物、无线缆缠绕
+- 目标物体允许被抓取，且周边没有不希望碰撞的物体
+- 操作人员在现场可直接观察机器人，并可随时介入停止
+- 默认先做“只检测不抓取”或 `dry_run: true`，确认目标和位姿正确后再执行真实抓取
+
+如果用户没有明确要求立刻真实抓取，不要直接执行 `dry_run: false`。
+
+---
+
 ## 完整使用流程
 
 ### 第一步：检查可用 YOLO 模型及类名
@@ -59,7 +72,18 @@ ros2 service call /xrrobot_vision_grasp/observe_target \
 ```
 返回目标详情：深度、3D 坐标、置信度。适合先"看一眼"再决定抓不抓。
 
-### 第五步：执行抓取
+### 第五步：先做 dry-run 验证
+```bash
+ros2 action send_goal /xrrobot_vision_grasp/detect_and_grasp \
+  xrrobot_vision_grasp_interfaces/action/DetectAndGrasp \
+  "{target_classes: ['cup'], model_name: 'yolov8s_cup.pt',
+    selection_policy: 0, dry_run: true, detection_timeout_sec: 15.0}"
+```
+
+### 第六步：用户确认后再执行真实抓取
+
+只有在用户明确同意、且现场确认安全后，才执行：
+
 ```bash
 ros2 action send_goal /xrrobot_vision_grasp/detect_and_grasp \
   xrrobot_vision_grasp_interfaces/action/DetectAndGrasp \
@@ -78,7 +102,8 @@ ros2 action send_goal /xrrobot_vision_grasp/detect_and_grasp \
 3. 用户选模型 + 目标类
 4. 切 YOLO 模式
 5. observe_target 检测
-6. detect_and_grasp 执行抓取
+6. 先用 dry_run 检查目标是否正确
+7. 用户明确确认后，再 detect_and_grasp 执行真实抓取
 ```
 
 **"杯子"不在模型类名里**
