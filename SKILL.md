@@ -1,7 +1,7 @@
 ---
 name: xrrobot-ros2
 description: 控制、检查和排查基于 ROS 2 Jazzy 的 XRRobot...
-version: 1.0.0
+version: 1.0.1
 metadata:
   openclaw:
     os:
